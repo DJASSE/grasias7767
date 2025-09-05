@@ -1,279 +1,788 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="ar">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>محادثة TikTok Style</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <meta charset="utf-8" />
+  <title>دردشة مترجمة + أصدقاء + مكالمات (متكامل)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body {background:#000;color:#fff;font-family:'Segoe UI',sans-serif;transition:background 0.3s,color 0.3s;}
-    section{display:none;animation:fadeIn .5s ease-in-out;} section.active{display:block;}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);}}
-    .chat-bubble{max-width:70%;padding:10px 14px;margin:6px;border-radius:18px;word-wrap:break-word;font-size:15px;animation:popIn .3s ease;}
-    @keyframes popIn{from{transform:scale(.8);opacity:0;}to{transform:scale(1);opacity:1;}}
-    .me{background:#ff0050;color:#fff;margin-left:auto;} .other{background:#222;color:#fff;margin-right:auto;}
-    .list-item{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid #333;cursor:pointer;}
-    .list-item img{width:40px;height:40px;border-radius:50%;object-fit:cover;}
-    .chat-header{display:flex;align-items:center;gap:10px;padding:5px;border-bottom:1px solid #333;}
-    .chat-header img{width:45px;height:45px;border-radius:50%;}
-    .btn-tiktok{background:linear-gradient(45deg,#ff0050,#00f2ea);border:none;color:#fff;font-weight:bold;border-radius:25px;}
-    .btn-tiktok:hover{opacity:.85;}
-    .card{background:#111;color:#fff;}
-    input,select{background:#222!important;color:#fff!important;border:none!important;}
-    body.light{background:#f0f2f5;color:#000;}
-    body.light .card{background:#fff;color:#000;}
-    body.light input,body.light select{background:#fff!important;color:#000!important;border:1px solid #ccc!important;}
-    body.light .me{background:#1877f2;color:#fff;} body.light .other{background:#e9ecef;color:#111;}
-    body.light .list-item{border-bottom:1px solid #ccc;}
+    :root{
+      --bg:#071025; --card:#0f1724; --accent:#00d1b2; --accent2:#3b82f6; --muted:#9aa6bf;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Tahoma,Arial;background:linear-gradient(135deg,var(--bg),#051029);color:#fff;padding:12px;direction:rtl}
+    .app{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start}
+    .card{background:rgba(255,255,255,0.03);padding:12px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    h1,h2{margin:0 0 8px 0;color:var(--accent)}
+    label{display:block;margin-top:8px;color:var(--muted);font-size:13px}
+    input,select,button,textarea{width:100%;padding:10px;border-radius:8px;border:none;font-size:14px;background:rgba(255,255,255,0.02);color:#fff}
+    button{cursor:pointer;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#000;font-weight:700}
+    button.gray{background:#333;color:#fff}
+    .small{padding:8px;font-size:13px}
+    .muted{color:var(--muted);font-size:13px}
+    .users-list{margin-top:8px;display:flex;flex-direction:column;gap:8px}
+    .user-row{display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02)}
+    .user-row .meta{flex:1}
+    #chat-box{height:56vh;overflow:auto;padding:12px;background:rgba(0,0,0,0.06);border-radius:8px}
+    .msg{margin:8px 0;padding:10px;border-radius:12px;max-width:75%;word-break:break-word}
+    .me{background:linear-gradient(90deg,var(--accent),#00f6d0);color:#000;margin-left:auto;text-align:right}
+    .other{background:#1b2638;color:#fff;margin-right:auto;text-align:left}
+    .wrap-row{display:flex;gap:8px;align-items:center}
+    nav a{color:var(--muted);text-decoration:none;margin-left:8px}
+    .incoming-call{position:fixed;left:22px;bottom:22px;background:#111;padding:14px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.6);display:none;z-index:999}
+    img,video{max-width:260px;border-radius:8px;margin-top:6px}
+    .hidden{display:none}
+    @media(max-width:900px){.app{grid-template-columns:1fr;}}
+    footer.note{max-width:1200px;margin:12px auto;color:var(--muted);font-size:13px;text-align:center}
   </style>
 </head>
-<body class="container py-3">
+<body>
+  <div class="app">
 
-  <!-- Navigation -->
-  <div class="mb-3 text-center">
-    <button class="btn btn-tiktok" onclick="showPage('registerPage')">🏠 تسجيل</button>
-    <button class="btn btn-tiktok" onclick="showPage('searchPage')">🔎 بحث</button>
-    <button class="btn btn-tiktok" onclick="showPage('requestsPage')">📨 الطلبات</button>
-    <button class="btn btn-tiktok" onclick="showPage('friendsPage')">👥 الأصدقاء</button>
-    <button class="btn btn-warning" onclick="logout()">🚪 خروج</button>
-    <button class="btn btn-secondary" onclick="toggleTheme()">🌓 تبديل الثيم</button>
+    <!-- LEFT: تسجيل + لغتي + بحث + طلبات + أصدقاء -->
+    <div class="card">
+      <h2>🔐 تسجيل / لغتي</h2>
+      <label>اسم المستخدم</label>
+      <input id="username" placeholder="اكتب اسمك...">
+      <label>ابحث لغة</label>
+      <input id="langSearch" placeholder="ابحث باسم اللغة...">
+      <label>اختر لغة التحدث (يتم حفظها عند الضغط على تسجيل)</label>
+      <select id="langSelect" size="6" style="height:140px"></select>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="loginBtn">دخول</button>
+        <button id="logoutBtn" class="gray hidden">خروج</button>
+      </div>
+
+      <hr style="opacity:0.06;margin:12px 0">
+      <h2>🔍 بحث عن مستخدم</h2>
+      <div class="muted">ابحث باسم المستخدم ثم أرسل طلب صداقة</div>
+      <input id="userSearch" placeholder="ابحث باسم المستخدم...">
+      <div id="userResults" class="users-list"></div>
+
+      <hr style="opacity:0.06;margin:12px 0">
+      <h2>📨 طلبات واردة</h2>
+      <div id="requestsList"></div>
+
+      <hr style="opacity:0.06;margin:12px 0">
+      <h2>👥 أصدقائي</h2>
+      <div id="friendsList"></div>
+    </div>
+
+    <!-- RIGHT: الدردشة + مكالمات -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h2 id="chatTitle">💬 لا يوجد محادثة</h2>
+          <div id="chatSubtitle" class="muted">اختر صديقاً من قائمة "أصدقائي" لبدء المحادثة</div>
+        </div>
+        <div>
+          <button id="endCallBtn" class="gray small hidden">إنهاء المكالمة</button>
+        </div>
+      </div>
+
+      <div id="chat-box"></div>
+
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <input id="msgInput" placeholder="اكتب رسالتك..." />
+        <button id="sendBtn" class="small">إرسال</button>
+      </div>
+
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+        <input type="file" id="fileInput" accept="image/*,video/*">
+        <button id="sendFileBtn" class="small">إرسال ملف</button>
+        <div style="flex:1"></div>
+        <div class="muted">لغتي الحالية: <span id="currentLangLabel">العربية</span></div>
+      </div>
+
+      <hr style="opacity:0.06;margin:12px 0">
+      <h2>📞 مكالمات صوتية مترجمة</h2>
+      <div class="muted">الميزات: تحويل الكلام → نص → ترجمة → نطق. استخدم Chrome/Edge لتجربة أفضل.</div>
+    </div>
   </div>
 
-  <!-- Register -->
-  <section id="registerPage">
-    <div class="card p-4 shadow-lg">
-      <h4 class="mb-3 text-center">🚀 تسجيل حساب</h4>
-      <input id="regName" type="text" class="form-control mb-2" placeholder="✍️ الاسم">
-      <input id="regAge" type="number" class="form-control mb-2" placeholder="🎂 العمر">
-      <select id="regGender" class="form-select mb-2">
-        <option value="">اختر الجنس</option><option value="ذكر">ذكر</option><option value="أنثى">أنثى</option>
-      </select>
-      <input id="regPhoto" type="file" accept="image/*" class="form-control mb-2">
-      <button id="btnContinue" class="btn btn-tiktok w-100" disabled>متابعة</button>
+  <!-- إشعار مكالمة وارد -->
+  <div id="incomingCall" class="incoming-call">
+    <div id="callerTxt" style="margin-bottom:8px">📞 اتصال وارد</div>
+    <div style="display:flex;gap:8px">
+      <button id="answerBtn">📥 رد</button>
+      <button id="rejectBtn" class="gray">❌ رفض</button>
     </div>
-  </section>
+  </div>
 
-  <!-- Search -->
-  <section id="searchPage">
-    <h4>🔎 ابحث عن مستخدمين</h4>
-    <div class="input-group mb-3">
-      <input id="searchInput" type="search" class="form-control" placeholder="اكتب اسم المستخدم">
-      <button id="btnSearch" class="btn btn-tiktok">بحث</button>
-    </div>
-    <div id="searchResults"></div>
-  </section>
+  <div class="note footer">
+    تم إنشاء التطبيق كنموذج تعليمي — تذكر إعداد قواعد أمان Firebase قبل النشر. 🚀
+  </div>
 
-  <!-- Requests -->
-  <section id="requestsPage">
-    <h4>📨 الطلبات</h4>
-    <div id="requestsList"></div>
-  </section>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
-  <!-- Friends -->
-  <section id="friendsPage">
-    <h4>👥 أصدقائي</h4>
-    <div id="friendsList"></div>
-  </section>
+<script>
+/* =========================
+   مشروع متكامل - ملف واحد
+   يحتوي HTML + CSS + JS
+   ========================= */
 
-  <!-- Chat -->
-  <section id="chatPage">
-    <div class="chat-header">
-      <img id="chatFriendImg" src=""><h5 id="chatFriend"></h5>
-    </div>
-    <div id="messagesArea" style="height:55vh;overflow:auto;" class="mb-2 p-2 rounded bg-dark"></div>
-    <div class="input-group mb-2">
-      <input id="msgInput" type="text" class="form-control" placeholder="اكتب رسالة...">
-      <button id="btnSend" class="btn btn-tiktok">إرسال</button>
-    </div>
-    <button id="btnRecord" class="btn btn-danger w-100">🎤 اضغط لتسجيل صوت</button>
-  </section>
+/* ================= CONFIG ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCNXyQF2ZCMaxuBplGivMZiz_rFnCt6e0M",
+  authDomain: "grasias-260c5.firebaseapp.com",
+  projectId: "grasias-260c5",
+  storageBucket: "grasias-260c5.appspot.com",
+  messagingSenderId: "673016515237",
+  appId: "1:673016515237:web:ecd56c7e6b0dc81af51b4c",
+  databaseURL: "https://grasias-260c5-default-rtdb.firebaseio.com/"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const storage = firebase.storage();
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyDQmWof8RhM8yef5MQDQ2Cc3KtMr7RQVHA",
-      authDomain: "djasser-137e1.firebaseapp.com",
-      databaseURL: "https://djasser-137e1-default-rtdb.firebaseio.com",
-      projectId: "djasser-137e1",
-      storageBucket: "djasser-137e1.appspot.com",
-      messagingSenderId: "204637393208",
-      appId: "1:204637393208:web:236fea510daa1d0f66f1cd"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth=firebase.auth(), db=firebase.database(), storage=firebase.storage();
+/* ============== Language list ============== */
+const langs = [
+  {code:"af",name:"Afrikaans"},{code:"ar",name:"العربية"},{code:"az",name:"Azərbaycan"},{code:"be",name:"Беларуская"},
+  {code:"bg",name:"Български"},{code:"bn",name:"বাংলা"},{code:"bs",name:"Bosanski"},{code:"ca",name:"Català"},{code:"ceb",name:"Cebuano"},
+  {code:"cs",name:"Čeština"},{code:"cy",name:"Cymraeg"},{code:"da",name:"Dansk"},{code:"de",name:"Deutsch"},{code:"el",name:"Ελληνικά"},
+  {code:"en",name:"English"},{code:"eo",name:"Esperanto"},{code:"es",name:"Español"},{code:"et",name:"Eesti"},{code:"eu",name:"Euskara"},
+  {code:"fa",name:"فارسی"},{code:"fi",name:"Suomi"},{code:"fil",name:"Filipino"},{code:"fr",name:"Français"},{code:"hi",name:"हिन्दी"},
+  {code:"zh",name:"中文"},{code:"ru",name:"Русский"},{code:"tr",name:"Türkçe"},{code:"pt",name:"Português"},{code:"ur",name:"اردو"},
+  {code:"es",name:"Español"},{code:"it",name:"Italiano"},{code:"ja",name:"日本語"},{code:"ko",name:"한국어"}
+  // يمكنك إضافة المزيد إذا أردت
+];
 
-    let currentUser=null,currentProfile=null,chatRef=null,chatFriendUid=null;
-    let mediaRecorder=null,audioChunks=[];
+function getLangName(code){
+  const f = langs.find(x=>x.code===code);
+  return f ? f.name : code;
+}
 
-    function $(id){return document.getElementById(id);}
-    function showPage(id){document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));$(id).classList.add("active");}
-    function toggleTheme(){document.body.classList.toggle("light");}
+/* ============== State ============== */
+let currentUser = null;
+let userLang = "ar";
+let currentPeer = null;
+let currentChatId = null;
+let pc = null;
+let localStream = null;
+let recognition = null;
+let isInCall = false;
+let incomingCallId = null;
+let incomingCaller = null;
 
-    // تفعيل زر متابعة
-    function checkRegisterFields(){
-      $("btnContinue").disabled = !(
-        $("regName").value.trim() &&
-        $("regAge").value.trim() &&
-        $("regGender").value &&
-        $("regPhoto").files.length>0
-      );
-    }
-    ["regName","regAge","regGender","regPhoto"].forEach(id=>{
-      $(id).addEventListener("input",checkRegisterFields);
-      $(id).addEventListener("change",checkRegisterFields);
+/* ============== DOM ============== */
+const usernameEl = document.getElementById("username");
+const langSearchEl = document.getElementById("langSearch");
+const langSelectEl = document.getElementById("langSelect");
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+const userSearchEl = document.getElementById("userSearch");
+const userResultsEl = document.getElementById("userResults");
+const requestsListEl = document.getElementById("requestsList");
+const friendsListEl = document.getElementById("friendsList");
+
+const chatBoxEl = document.getElementById("chat-box");
+const chatTitleEl = document.getElementById("chatTitle");
+const chatSubtitleEl = document.getElementById("chatSubtitle");
+const msgInputEl = document.getElementById("msgInput");
+const sendBtnEl = document.getElementById("sendBtn");
+const fileInputEl = document.getElementById("fileInput");
+const sendFileBtnEl = document.getElementById("sendFileBtn");
+const currentLangLabel = document.getElementById("currentLangLabel");
+const endCallBtn = document.getElementById("endCallBtn");
+
+const incomingCallEl = document.getElementById("incomingCall");
+const callerTxtEl = document.getElementById("callerTxt");
+const answerBtn = document.getElementById("answerBtn");
+const rejectBtn = document.getElementById("rejectBtn");
+
+/* ============== Render language selector ============== */
+function renderLangs(filter=""){
+  langSelectEl.innerHTML = "";
+  langs.filter(l => l.name.toLowerCase().includes(filter.toLowerCase()))
+    .forEach(l => {
+      const opt = document.createElement("option");
+      opt.value = l.code; opt.textContent = l.name;
+      langSelectEl.appendChild(opt);
     });
+  if(!langSelectEl.value) langSelectEl.value = "ar";
+  userLang = langSelectEl.value;
+  currentLangLabel.innerText = getLangName(userLang);
+}
+langSearchEl.addEventListener("input", e => renderLangs(e.target.value));
+langSelectEl.addEventListener("change", e => {
+  userLang = e.target.value;
+  currentLangLabel.innerText = getLangName(userLang);
+});
+renderLangs();
 
-    // تسجيل الدخول/إنشاء حساب
-    $("btnContinue").onclick=()=>{
-      auth.signInAnonymously().then(res=>{
-        currentUser=res.user;
-        let file=$("regPhoto").files[0];
-        let ref=storage.ref("profiles/"+currentUser.uid+".jpg");
-        ref.put(file).then(snap=>snap.ref.getDownloadURL()).then(url=>{
-          let profile={uid:currentUser.uid,name:$("regName").value,age:$("regAge").value,gender:$("regGender").value,photo:url};
-          db.ref("users/"+currentUser.uid).set(profile).then(()=>{
-            currentProfile=profile;
-            localStorage.setItem("profile",JSON.stringify(profile));
-            loadFriends(); loadRequests();
-            showPage("friendsPage");
-          });
-        });
-      });
-    };
+/* ============== Auth: login / logout ============== */
+loginBtn.addEventListener("click", async () => {
+  const name = usernameEl.value.trim();
+  if(!name) return alert("أدخل اسم المستخدم أولاً");
+  currentUser = name;
+  userLang = langSelectEl.value || "ar";
+  // سجل المستخدم مع لغته وحالته
+  await db.ref("users/" + currentUser).set({ lang: userLang, online: true, lastSeen: Date.now() });
+  localStorage.setItem("chat_user", currentUser);
+  localStorage.setItem("chat_lang", userLang);
+  usernameEl.disabled = true;
+  loginBtn.classList.add("hidden");
+  logoutBtn.classList.remove("hidden");
+  loadUsersList(); loadRequests(); loadFriends(); setupTranscriptsListenerForUser(); watchIncomingCalls();
+  alert("تم تسجيل الدخول كـ " + currentUser);
+});
 
-    // استرجاع حساب محلي
-    window.onload=()=>{
-      let saved=localStorage.getItem("profile");
-      if(saved){
-        currentProfile=JSON.parse(saved);
-        auth.signInAnonymously().then(u=>{
-          currentUser=u.user;
-          loadFriends(); loadRequests(); showPage("friendsPage");
-        });
-      } else {showPage("registerPage");}
-    };
+logoutBtn.addEventListener("click", async () => {
+  if(!currentUser) return;
+  await db.ref("users/" + currentUser).remove();
+  localStorage.removeItem("chat_user");
+  localStorage.removeItem("chat_lang");
+  // reset UI
+  currentUser = null;
+  usernameEl.disabled = false;
+  usernameEl.value = "";
+  loginBtn.classList.remove("hidden");
+  logoutBtn.classList.add("hidden");
+  userResultsEl.innerHTML = ""; requestsListEl.innerHTML = ""; friendsListEl.innerHTML = ""; chatBoxEl.innerHTML = "";
+  chatTitleEl.textContent = "💬 لا يوجد محادثة";
+  chatSubtitleEl.textContent = "اختر صديقاً من قائمة الأصدقاء لبدء المحادثة";
+});
 
-    // البحث
-    $("btnSearch").onclick=()=>{
-      let q=$("searchInput").value.trim();
-      $("searchResults").innerHTML="";
-      if(!q) return;
-      db.ref("users").orderByChild("name").startAt(q).endAt(q+"\uf8ff").once("value",snap=>{
-        snap.forEach(c=>{
-          let u=c.val(); if(u.uid===currentUser.uid) return;
-          let div=document.createElement("div");
-          div.className="list-item";
-          div.innerHTML=`<img src="${u.photo||''}"><span>${u.name} (${u.age})</span>`;
-          div.onclick=()=>sendRequest(u.uid);
-          $("searchResults").appendChild(div);
-        });
-      });
-    };
-    function sendRequest(toUid){
-      let reqId=db.ref("friendRequests").push().key;
-      db.ref("friendRequests/"+reqId).set({from:currentUser.uid,to:toUid});
+/* restore on load */
+window.addEventListener("load", async () => {
+  const saved = localStorage.getItem("chat_user");
+  const savedLang = localStorage.getItem("chat_lang");
+  if(saved){
+    usernameEl.value = saved;
+    usernameEl.disabled = true;
+    loginBtn.classList.add("hidden");
+    logoutBtn.classList.remove("hidden");
+    currentUser = saved;
+    userLang = savedLang || "ar";
+    currentLangLabel.innerText = getLangName(userLang);
+    // mark online
+    await db.ref("users/" + currentUser).set({ lang: userLang, online: true, lastSeen: Date.now() });
+    loadUsersList(); loadRequests(); loadFriends(); setupTranscriptsListenerForUser(); watchIncomingCalls();
+  }
+});
+
+/* when page closed, mark offline */
+window.addEventListener("beforeunload", async () => {
+  const cur = localStorage.getItem("chat_user");
+  if(cur){
+    try{ await db.ref("users/" + cur).update({ online: false, lastSeen: Date.now() }); } catch(e){}
+  }
+});
+
+/* ============== Load users list for search ============== */
+async function loadUsersList(){
+  db.ref("users").on("value", snap => {
+    // The full list kept for search operations (we will query locally)
+    // but we don't render here — rendering occurs when user types.
+  });
+}
+
+/* Search users by input */
+userSearchEl.addEventListener("input", async (e) => {
+  const q = e.target.value.trim().toLowerCase();
+  userResultsEl.innerHTML = "";
+  if(!q) return;
+  const snap = await db.ref("users").once("value");
+  const users = snap.val() || {};
+  for(const name in users){
+    if(name.toLowerCase().includes(q) && name !== currentUser){
+      const row = document.createElement("div");
+      row.className = "user-row";
+      const meta = document.createElement("div"); meta.className = "meta";
+      meta.innerHTML = `<strong>${name}</strong><div class="muted">اللغة: ${getLangName(users[name].lang)}</div>`;
+      const actions = document.createElement("div");
+      actions.style.display = "flex"; actions.style.gap = "6px";
+      const btnReq = document.createElement("button"); btnReq.className="small"; btnReq.textContent = "إرسال طلب";
+      btnReq.onclick = ()=> sendFriendRequest(name);
+      const btnView = document.createElement("button"); btnView.className="small gray"; btnView.textContent="عرض";
+      btnView.onclick = ()=> alert("عرض ملف المستخدم: " + name);
+      actions.appendChild(btnReq); actions.appendChild(btnView);
+      row.appendChild(meta); row.appendChild(actions);
+      userResultsEl.appendChild(row);
     }
+  }
+});
 
-    // الطلبات
-    function loadRequests(){
-      db.ref("friendRequests").on("value",snap=>{
-        $("requestsList").innerHTML="";
-        snap.forEach(c=>{
-          let r=c.val();
-          if(r.to===currentUser.uid){
-            db.ref("users/"+r.from).once("value",usnap=>{
-              let u=usnap.val();
-              let div=document.createElement("div");
-              div.className="list-item";
-              div.innerHTML=`<img src="${u.photo||''}"><span>${u.name} يريد إضافتك</span>
-              <button class="btn btn-sm btn-success ms-auto">قبول</button>`;
-              div.querySelector("button").onclick=()=>{
-                const now=Date.now();
-                db.ref("friends/"+currentUser.uid+"/"+r.from).set({uid:r.from,since:now});
-                db.ref("friends/"+r.from+"/"+currentUser.uid).set({uid:currentUser.uid,since:now});
-                db.ref("friendRequests/"+c.key).remove();
-              };
-              $("requestsList").appendChild(div);
-            });
-          }
-        });
-      });
+/* ============== Friend Requests ============== */
+async function sendFriendRequest(toUser){
+  if(!currentUser) return alert("سجّل أو أنشئ حساباً أولاً");
+  if(toUser === currentUser) return;
+  await db.ref("friendRequests/" + toUser + "/" + currentUser).set({ ts: Date.now() });
+  alert("تم إرسال طلب صداقة إلى " + toUser);
+}
+
+/* Load incoming requests for currentUser */
+function loadRequests(){
+  if(!currentUser) return;
+  db.ref("friendRequests/" + currentUser).on("value", snap => {
+    const data = snap.val() || {};
+    requestsListEl.innerHTML = "";
+    const keys = Object.keys(data);
+    if(keys.length === 0){
+      requestsListEl.innerHTML = "<div class='muted'>لا توجد طلبات واردة</div>";
+      return;
     }
-
-    // الأصدقاء
-    function loadFriends(){
-      db.ref("friends/"+currentUser.uid).on("value",snap=>{
-        $("friendsList").innerHTML="";
-        snap.forEach(c=>{
-          db.ref("users/"+c.key).once("value",usnap=>{
-            let u=usnap.val();
-            let div=document.createElement("div");
-            div.className="list-item";
-            div.innerHTML=`<img src="${u.photo||''}"><span>${u.name} (${u.age})</span>`;
-            div.onclick=()=>openChat(u.uid,u.name,u.photo);
-            $("friendsList").appendChild(div);
-          });
-        });
-      });
+    for(const from in data){
+      const row = document.createElement("div");
+      row.className = "user-row";
+      row.innerHTML = `<div class="meta"><strong>${from}</strong><div class="muted">طلب صداقة وارد</div></div>`;
+      const acceptBtn = document.createElement("button"); acceptBtn.className="small"; acceptBtn.textContent="قبول";
+      const rejectBtn = document.createElement("button"); rejectBtn.className="small gray"; rejectBtn.textContent="رفض";
+      acceptBtn.onclick = ()=> acceptRequest(from);
+      rejectBtn.onclick = ()=> rejectRequest(from);
+      row.appendChild(acceptBtn); row.appendChild(rejectBtn);
+      requestsListEl.appendChild(row);
     }
+  });
+}
 
-    // المحادثة
-    function openChat(friendUid,friendName,photo){
-      showPage("chatPage");
-      $("chatFriend").textContent=friendName;
-      $("chatFriendImg").src=photo||"";
-      $("messagesArea").innerHTML="";
-      chatFriendUid=friendUid;
-      let chatId=currentUser.uid<friendUid? currentUser.uid+"_"+friendUid : friendUid+"_"+currentUser.uid;
-      chatRef=db.ref("chats/"+chatId); chatRef.off();
-      chatRef.on("child_added",snap=>{
-        let m=snap.val(); let div=document.createElement("div");
-        div.className="chat-bubble "+(m.from===currentUser.uid?"me":"other");
-        if(m.type==="text") div.textContent=m.text;
-        if(m.type==="audio") div.innerHTML=`<audio controls src="${m.url}"></audio>`;
-        $("messagesArea").appendChild(div);
-        $("messagesArea").scrollTop=$("messagesArea").scrollHeight;
-      });
+async function acceptRequest(from){
+  if(!currentUser) return;
+  await db.ref("friends/" + currentUser + "/" + from).set(true);
+  await db.ref("friends/" + from + "/" + currentUser).set(true);
+  await db.ref("friendRequests/" + currentUser + "/" + from).remove();
+  alert("تم قبول " + from);
+}
+
+async function rejectRequest(from){
+  if(!currentUser) return;
+  await db.ref("friendRequests/" + currentUser + "/" + from).remove();
+  alert("تم رفض " + from);
+}
+
+/* ============== Friends list ============== */
+function loadFriends(){
+  if(!currentUser) return;
+  db.ref("friends/" + currentUser).on("value", snap => {
+    const f = snap.val() || {};
+    friendsListEl.innerHTML = "";
+    const keys = Object.keys(f);
+    if(keys.length === 0) {
+      friendsListEl.innerHTML = "<div class='muted'>لم تقبل أصدقاء بعد.</div>";
+      return;
     }
+    for(const friend in f){
+      const row = document.createElement("div");
+      row.className = "user-row";
+      row.innerHTML = `<div class="meta"><strong>${friend}</strong></div>`;
+      const btnChat = document.createElement("button"); btnChat.className="small"; btnChat.textContent="دردشة";
+      btnChat.onclick = ()=> openChat(friend);
+      const btnCall = document.createElement("button"); btnCall.className="small gray"; btnCall.textContent="📞 اتصال";
+      btnCall.onclick = ()=> initiateCall(friend);
+      const btnRemove = document.createElement("button"); btnRemove.className="small gray"; btnRemove.textContent="حذف";
+      btnRemove.onclick = ()=> removeFriend(friend);
+      row.appendChild(btnChat); row.appendChild(btnCall); row.appendChild(btnRemove);
+      friendsListEl.appendChild(row);
+    }
+  });
+}
 
-    $("btnSend").onclick=()=>{
-      let text=$("msgInput").value.trim();
-      if(text && chatRef){
-        chatRef.push({from:currentUser.uid,type:"text",text,ts:Date.now()});
-        $("msgInput").value="";
+async function removeFriend(friend){
+  if(!currentUser) return;
+  if(!confirm("هل تريد حذف " + friend + " من الأصدقاء؟")) return;
+  await db.ref("friends/" + currentUser + "/" + friend).remove();
+  await db.ref("friends/" + friend + "/" + currentUser).remove();
+  alert("تم الحذف");
+}
+
+/* ============== Chat messaging ============== */
+function getChatId(a,b){ return [a,b].sort().join("_"); }
+
+function openChat(peer){
+  currentPeer = peer;
+  currentChatId = getChatId(currentUser, peer);
+  chatTitleEl.textContent = "💬 دردشة مع: " + peer;
+  chatSubtitleEl.textContent = "اللغة الحالية: " + getLangName(userLang);
+  chatBoxEl.innerHTML = "";
+  // listen for messages
+  db.ref("chats/" + currentChatId + "/messages").off();
+  db.ref("chats/" + currentChatId + "/messages").on("child_added", snap => {
+    const data = snap.val();
+    renderMessage(data);
+  });
+}
+
+function renderMessage(data){
+  const el = document.createElement("div");
+  el.className = "msg " + (data.sender === currentUser ? "me" : "other");
+  let content = "";
+  if(data.type === "media"){
+    if(data.mediaType && data.mediaType.startsWith("image")){
+      content = `<b>${escapeHtml(data.sender)}:</b><br><img src="${data.text}" alt="image">`;
+    } else {
+      content = `<b>${escapeHtml(data.sender)}:</b><br><video src="${data.text}" controls></video>`;
+    }
+  } else {
+    content = `<b>${escapeHtml(data.sender)}:</b> ${escapeHtml(data.text)}`;
+  }
+  el.innerHTML = content;
+  chatBoxEl.appendChild(el);
+  chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+}
+
+sendBtnEl.addEventListener("click", async () => {
+  if(!currentPeer) return alert("اختر صديقاً من قائمة الأصدقاء أولاً.");
+  const text = msgInputEl.value.trim();
+  if(!text) return;
+  const id = currentChatId || getChatId(currentUser, currentPeer);
+  await db.ref("chats/" + id + "/messages").push({
+    sender: currentUser, text, lang: userLang, type: "text", timestamp: Date.now()
+  });
+  msgInputEl.value = "";
+});
+
+sendFileBtn.addEventListener("click", async () => {
+  if(!currentPeer) return alert("اختر صديقاً أولاً.");
+  const f = fileInputEl.files[0];
+  if(!f) return alert("اختر ملفاً أولاً");
+  const storageRef = storage.ref("chatFiles/" + Date.now() + "_" + f.name);
+  const uploadTask = storageRef.put(f);
+  uploadTask.on('state_changed', null, err => alert("خطأ بالرفع: " + err.message), async () => {
+    const url = await storageRef.getDownloadURL();
+    const id = currentChatId || getChatId(currentUser, currentPeer);
+    await db.ref("chats/" + id + "/messages").push({
+      sender: currentUser, text: url, lang: userLang, type: "media", mediaType: f.type, timestamp: Date.now()
+    });
+    fileInputEl.value = "";
+  });
+});
+
+/* ============== Translate helper (gtx) ============== */
+async function translateText(text, target){
+  try{
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return (data && data[0] && data[0][0] && data[0][0][0]) ? data[0][0][0] : text;
+  } catch(err){
+    console.error("translate error", err);
+    return text;
+  }
+}
+
+/* ============== CALLING: initiate / answer / reject / signaling ============== */
+
+/* initiate call to peer */
+async function initiateCall(peerName){
+  if(!currentUser) return alert("سجّل أولاً");
+  if(!peerName) return;
+  currentPeer = peerName;
+  const chatId = getChatId(currentUser, peerName);
+  currentChatId = chatId;
+
+  // meta with from/to and callerLang
+  await db.ref("calls/" + chatId + "/meta").set({
+    from: currentUser,
+    to: peerName,
+    callerLang: userLang,
+    timestamp: Date.now()
+  });
+
+  // create peer connection & offer
+  pc = new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+
+  // get mic
+  try{
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true, video:false});
+  } catch(err){
+    return alert("مشكلة في الوصول للميكروفون: " + err.message);
+  }
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  // ice -> push to DB
+  const candRef = db.ref("calls/" + chatId + "/candidates");
+  pc.onicecandidate = e => { if(e.candidate) candRef.push(JSON.stringify(e.candidate)); };
+
+  // remote audio (play)
+  pc.ontrack = ev => {
+    const audio = document.createElement("audio");
+    audio.autoplay = true;
+    audio.srcObject = ev.streams[0];
+    audio.style.display = "none";
+    document.body.appendChild(audio);
+  };
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await db.ref("calls/" + chatId + "/offer").set(JSON.stringify(offer));
+
+  // listen for answer
+  db.ref("calls/" + chatId + "/answer").on("value", async snap => {
+    const val = snap.val();
+    if(val && pc && !pc.currentRemoteDescription){
+      await pc.setRemoteDescription(JSON.parse(val));
+      // start speech recognition & translate after remote set
+      startSpeechRecognitionAndTranslate(chatId, userLang);
+      isInCall = true;
+      endCallBtn.classList.remove("hidden");
+      chatTitleEl.textContent = `📞 في مكالمة مع ${peerName}`;
+    }
+  });
+
+  // listen for remote ICE
+  db.ref("calls/" + chatId + "/candidates").on("child_added", async snap => {
+    const v = snap.val();
+    if(v && pc) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(v))); } catch(e){}
+    }
+  });
+
+  // listener for transcripts so caller can see
+  db.ref("calls/" + chatId + "/transcripts").on("child_added", snap => {
+    const d = snap.val();
+    if(!d) return;
+    // render transcript
+    const el = document.createElement("div");
+    el.className = "msg me";
+    el.innerHTML = `<b>🔁 ترجمة (${d.source}→${d.target}):</b> ${escapeHtml(d.translated)}`;
+    chatBoxEl.appendChild(el);
+    chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+  });
+}
+
+/* watch incoming calls globally for currentUser */
+function watchIncomingCalls(){
+  db.ref("calls").on("child_added", async snap => {
+    const chatId = snap.key;
+    const val = snap.val();
+    if(!val || !val.meta) return;
+    const meta = val.meta;
+    // if this call is addressed to me and not already in progress
+    if(meta.to === currentUser && !isInCall){
+      incomingCallId = chatId;
+      incomingCaller = meta.from;
+      callerTxtEl.textContent = `📞 اتصال وارد من: ${incomingCaller}`;
+      incomingCallEl.style.display = "block";
+    }
+  });
+}
+
+/* answer incoming call */
+answerBtn.addEventListener("click", async () => {
+  if(!incomingCallId) return;
+  incomingCallEl.style.display = "none";
+  // set currentPeer from meta
+  const metaSnap = await db.ref("calls/" + incomingCallId + "/meta").once("value");
+  const meta = metaSnap.val();
+  if(!meta) return alert("مشكلة: لم نعثر على بيانات المكالمة");
+  currentPeer = meta.from;
+  currentChatId = incomingCallId;
+
+  // create pc and get mic
+  pc = new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+  try{
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+  } catch(err){ return alert("فشل بالحصول على المايك: " + err.message); }
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  // remote audio
+  pc.ontrack = ev => {
+    const audio = document.createElement("audio");
+    audio.autoplay = true;
+    audio.srcObject = ev.streams[0];
+    audio.style.display = "none";
+    document.body.appendChild(audio);
+  };
+
+  // ICE
+  const candRef = db.ref("calls/" + incomingCallId + "/candidates");
+  pc.onicecandidate = e => { if(e.candidate) candRef.push(JSON.stringify(e.candidate)); };
+
+  // get offer
+  const offerSnap = await db.ref("calls/" + incomingCallId + "/offer").once("value");
+  const offer = offerSnap.val();
+  if(!offer) return alert("لا يوجد عرض للصوت (offer).");
+  await pc.setRemoteDescription(JSON.parse(offer));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await db.ref("calls/" + incomingCallId + "/answer").set(JSON.stringify(answer));
+
+  // listen ICE
+  db.ref("calls/" + incomingCallId + "/candidates").on("child_added", async snap => {
+    const v = snap.val();
+    if(v && pc) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(v))); } catch(e){}
+    }
+  });
+
+  // listen transcripts — when someone pushes transcript targeted to me, speak it
+  db.ref("calls/" + incomingCallId + "/transcripts").on("child_added", async snap => {
+    const d = snap.val();
+    if(!d) return;
+    // if this transcript is targeted at me (d.to === currentUser), speak it
+    if(d.to === currentUser){
+      speakText(d.translated, d.target);
+      // also show in chat area
+      const el = document.createElement("div");
+      el.className = "msg other";
+      el.innerHTML = `<b>🔁 (${d.from}→${d.target}):</b> ${escapeHtml(d.translated)}`;
+      chatBoxEl.appendChild(el);
+      chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+    }
+  });
+
+  isInCall = true;
+  endCallBtn.classList.remove("hidden");
+  chatTitleEl.textContent = `📞 في مكالمة مع ${currentPeer}`;
+});
+
+/* reject incoming call */
+rejectBtn.addEventListener("click", async () => {
+  if(!incomingCallId) { incomingCallEl.style.display = "none"; return; }
+  await db.ref("calls/" + incomingCallId).remove();
+  incomingCallId = null; incomingCaller = null;
+  incomingCallEl.style.display = "none";
+});
+
+/* end call cleanup */
+endCallBtn.addEventListener("click", async () => { await endCall(); });
+
+async function endCall(){
+  if(currentChatId) {
+    await db.ref("calls/" + currentChatId).remove();
+  }
+  if(pc){ try{ pc.close(); } catch(e){} pc = null; }
+  if(localStream){ localStream.getTracks().forEach(t=>t.stop()); localStream = null; }
+  if(recognition){ try{ recognition.onend = null; recognition.stop(); } catch(e){} recognition = null; }
+  isInCall = false;
+  incomingCallId = null; incomingCaller = null; currentChatId = null;
+  currentPeer = null;
+  chatTitleEl.textContent = "💬 لا يوجد محادثة";
+  endCallBtn.classList.add("hidden");
+}
+
+/* ============== Speech recognition (caller) -> translate -> push transcript ============== */
+function startSpeechRecognitionAndTranslate(chatId, fromLang){
+  // stop previous if any
+  if(recognition){ try{ recognition.onend = null; recognition.stop(); } catch(e){} recognition = null; }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    alert("المتصفح لا يدعم Web Speech API (SpeechRecognition). استخدم Chrome/Edge للحصول على أفضل نتيجة.");
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.lang = fromLang;
+  recognition.continuous = true;
+  recognition.interimResults = false;
+
+  recognition.onresult = async (ev) => {
+    try{
+      const last = ev.results[ev.results.length-1];
+      const text = last[0].transcript.trim();
+      if(!text) return;
+      // read meta to know to whom
+      const metaSnap = await db.ref("calls/" + chatId + "/meta").once("value");
+      const meta = metaSnap.val();
+      if(!meta) return;
+      const toUser = meta.to;
+      // get receiver language
+      const userSnap = await db.ref("users/" + toUser).once("value");
+      const receiverLang = (userSnap.val() && userSnap.val().lang) ? userSnap.val().lang : "en";
+
+      // translate text (gtx)
+      const translated = await translateText(text, receiverLang);
+
+      // push transcript object to DB
+      await db.ref("calls/" + chatId + "/transcripts").push({
+        from: currentUser,
+        to: toUser,
+        original: text,
+        translated: translated,
+        source: fromLang,
+        target: receiverLang,
+        timestamp: Date.now()
+      });
+
+      // show on caller's chat box
+      const el = document.createElement("div");
+      el.className = "msg me";
+      el.innerHTML = `<b>أنت:</b> ${escapeHtml(text)}<br><small class="muted">→ ترجمة ${receiverLang}: ${escapeHtml(translated)}</small>`;
+      chatBoxEl.appendChild(el);
+      chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
+
+    } catch(err){
+      console.error("recognition onresult error:", err);
+    }
+  };
+
+  recognition.onerror = e => console.warn("recognition error", e);
+  recognition.onend = () => { if(isInCall){ try{ recognition.start(); } catch(e){} } };
+  try{ recognition.start(); } catch(e){ console.error("rec start err", e); }
+}
+
+/* speech synthesis (speak) */
+function speakText(text, lang){
+  try{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    u.rate = 1;
+    u.pitch = 1;
+    window.speechSynthesis.speak(u);
+  } catch(err){
+    console.error("speak error", err);
+  }
+}
+
+/* ============== Incoming transcripts listener for current user (speak when d.to === currentUser) ============== */
+function setupTranscriptsListenerForUser(){
+  // Listen to all calls nodes and speak anything targeted to me
+  db.ref("calls").on("child_added", snap => {
+    const callId = snap.key;
+    // listen transcripts of this call
+    db.ref("calls/" + callId + "/transcripts").on("child_added", async tSnap => {
+      const d = tSnap.val();
+      if(!d) return;
+      if(d.to === currentUser){
+        // natively speak
+        speakText(d.translated, d.target);
+        // add to chat box if we are in chat with the sender
+        const el = document.createElement("div");
+        el.className = "msg other";
+        el.innerHTML = `<b>🔁 ${escapeHtml(d.from)} → ${escapeHtml(d.target)}:</b> ${escapeHtml(d.translated)}`;
+        chatBoxEl.appendChild(el);
+        chatBoxEl.scrollTop = chatBoxEl.scrollHeight;
       }
-    };
+    });
+  });
+}
 
-    // 🎤 تسجيل صوت (رح يطلب إذن من جوجل أول مرة)
-    async function startRecording(){
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks=[];
-        mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
-        mediaRecorder.onstop=()=>{
-          let blob=new Blob(audioChunks,{type:"audio/webm"});
-          let fileName="voice_"+Date.now()+".webm";
-          let ref=storage.ref("chatVoices/"+fileName);
-          ref.put(blob).then(snap=>snap.ref.getDownloadURL()).then(url=>{
-            chatRef.push({from:currentUser.uid,type:"audio",url,ts:Date.now()});
-          });
-        };
-        mediaRecorder.start();
-        $("btnRecord").textContent="⏺️ جاري التسجيل...";
-      } catch(e){
-        alert("⚠️ لا يمكن الوصول للميكروفون. افتح الرابط عبر HTTPS ومنح الإذن.");
-        console.error(e);
-      }
-    }
-    $("btnRecord").onmousedown=startRecording;
-    $("btnRecord").onmouseup=()=>{if(mediaRecorder && mediaRecorder.state==="recording"){mediaRecorder.stop();$("btnRecord").textContent="🎤 اضغط لتسجيل صوت";}};
+/* ============== watch for call removal (cleanup) ============== */
+db.ref("calls").on("child_removed", snap => {
+  if(snap.key === currentChatId || snap.key === incomingCallId){
+    endCall();
+    incomingCallEl.style.display = "none";
+  }
+});
 
-    function logout(){localStorage.removeItem("profile");auth.signOut();showPage("registerPage");}
-  </script>
+/* ============== Utility ============== */
+function escapeHtml(text){
+  if(!text) return "";
+  return text.replace(/[&<>"'`=\/]/g, function(s) { return "&#"+s.charCodeAt(0)+";"; });
+}
+
+/* Expose some functions globally for console/debug if needed */
+window.sendFriendRequest = sendFriendRequest;
+window.acceptRequest = acceptRequest;
+window.openChat = openChat;
+window.initiateCall = initiateCall;
+
+/* ============== Initialize small UI bits ============== */
+function initUI(){
+  // show saved user lang as label
+  const savedLang = localStorage.getItem("chat_lang");
+  if(savedLang) { userLang = savedLang; currentLangLabel.innerText = getLangName(userLang); }
+  // login state handled in load
+  // initial empty placeholders
+  userResultsEl.innerHTML = "<div class='muted'>ابحث عن مستخدم لارسال طلب صداقة</div>";
+  requestsListEl.innerHTML = "<div class='muted'>لا توجد طلبات واردة</div>";
+  friendsListEl.innerHTML = "<div class='muted'>قائمة الأصدقاء فارغة</div>";
+}
+initUI();
+
+/* ============== End of script ============== */
+</script>
 </body>
 </html>
